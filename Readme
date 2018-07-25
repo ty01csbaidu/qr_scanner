@@ -1,0 +1,1 @@
+make: g++ main.cpp scanner.cpp -o main -lzbar $(pkg-config --cflags --libs opencv)
