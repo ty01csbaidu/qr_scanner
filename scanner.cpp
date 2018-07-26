@@ -48,7 +48,8 @@ DecodeResults TScanner::zbar_decode(Mat &img) {
         DecodeResult obj;
 
         std::string s = symbol->get_data();
-        obj.data = s.c_str();
+        strcpy(obj.data, s.c_str());
+        //obj.data = symbol->get_data();
 
         // Print type and data
         // std::cout << "Data : " << obj.data << std::endl;

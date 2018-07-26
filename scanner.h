@@ -20,7 +20,7 @@ using namespace cv;
 using namespace zbar;
 
 struct DecodeResult{
-    const char *data;
+    char* data;
     uint32_t x;
     uint32_t y;
     uint32_t width;
