@@ -48,6 +48,7 @@ DecodeResults TScanner::zbar_decode(Mat &img) {
         DecodeResult obj;
 
         std::string s = symbol->get_data();
+        obj.data = new char[s.length()+1];
         strcpy(obj.data, s.c_str());
         //obj.data = symbol->get_data();
 
@@ -104,9 +105,11 @@ DecodeResults TScanner::morphology_decode(Mat &img) {
         morphologyEx(dil_img, open, CV_MOP_OPEN, kernel);
         decodedObjects = zbar_decode(open);
     }
+    /*
     if(decodedObjects.size() > 0){
         display(decodedObjects);
     }
+     */
     return decodedObjects;
 }
 
@@ -119,6 +122,7 @@ void TScanner::display(DecodeResults & decodeResults) {
         "," << decodeResults[i].width << "," << decodeResults[i].height << ")" << std::endl;
     }
 }
+
 
 
 DecodeResults TScanner::decode() {
@@ -143,33 +147,65 @@ DecodeResults TScanner::decode() {
     DecodeResults decodeObject = morphology_decode(origin_image);
     if(decodeObject.size() > 0){
         std::cout << "direct" << std::endl;
-        return decodeObject;
+        std::cout << decodeObject.size() << std::endl;
+        //return decodeObject;
     }
+
+    //otsu
+    Mat origin_otsu_im;
+    threshold(origin_image, origin_otsu_im, 26, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
+    DecodeResults intermediateResults = morphology_decode(origin_otsu_im);
+    if(intermediateResults.size() > 0){
+        std::cout << "otsu" << std::endl;
+        std::cout << intermediateResults.size() << std::endl;
+        decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
+    }
+
+    //adaptive
+    Mat origin_adaptive_im;
+    adaptiveThreshold(origin_image, origin_adaptive_im, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 41, 0);
+    intermediateResults = morphology_decode(origin_adaptive_im);
+    if(intermediateResults.size() > 0){
+        std::cout << "adaptive filter" << std::endl;
+        std::cout << intermediateResults.size() << std::endl;
+        decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
+    }
+
+
     //mean-filter
     Mat filter_img;
     blur(origin_image, filter_img, Size(5,5));
 
-    decodeObject = morphology_decode(filter_img);
-    if(decodeObject.size() > 0){
+    intermediateResults = morphology_decode(filter_img);
+    if(intermediateResults.size() > 0){
         std::cout << "mean-filter" << std::endl;
-        return decodeObject;
+        std::cout << intermediateResults.size() << std::endl;
+        decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
 
     //mean-filter + otsu
     Mat otsu_im;
     threshold(filter_img, otsu_im, 26, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
-    decodeObject = morphology_decode(otsu_im);
-    if(decodeObject.size() > 0){
+    intermediateResults = morphology_decode(otsu_im);
+    if(intermediateResults.size() > 0){
         std::cout << "mean-filter + otsu" << std::endl;
-        return decodeObject;
+        std::cout << intermediateResults.size() << std::endl;
+        decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
 
     //mean-filter + adaptive-filter
     Mat adaptive_im;
     adaptiveThreshold(filter_img, adaptive_im, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 41, 0);
-    decodeObject = morphology_decode(adaptive_im);
-    if(decodeObject.size() > 0){
+    intermediateResults = morphology_decode(adaptive_im);
+    if(intermediateResults.size() > 0){
         std::cout << "mean-filter + adaptive" << std::endl;
+        std::cout << intermediateResults.size() << std::endl;
+        decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
+    }
+    if(decodeObject.size() > 0){
+        std::set<DecodeResult> s(decodeObject.begin(), decodeObject.end());
+        decodeObject.assign(s.begin(), s.end());
+        display(decodeObject);
         return decodeObject;
     }
     std::cout << "not found" << std::endl;

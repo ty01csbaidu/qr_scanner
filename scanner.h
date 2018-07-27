@@ -25,6 +25,18 @@ struct DecodeResult{
     uint32_t y;
     uint32_t width;
     uint32_t height;
+
+    void free(){
+        delete [] data;
+    }
+    bool operator <(const DecodeResult & other) const
+    {
+        if((x/2 < other.x/2) || ((!(other.x/2 < x/2)) && (y/2 < other.y/2))){
+            return true;
+        }else{
+            return false;
+        }
+    }
 };
 
 typedef std::vector<DecodeResult> DecodeResults;

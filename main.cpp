@@ -10,5 +10,9 @@ int main(int argc, char **argv) {
     }
     TScanner scanner(argv[1]);
     DecodeResults decodedResult = scanner.decode();
+    //free memorry
+    for(int i = 0; i < decodedResult.size(); i++){
+        decodedResult[i].free();
+    }
     return 0;
 }
