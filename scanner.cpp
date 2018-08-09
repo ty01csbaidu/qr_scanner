@@ -35,6 +35,9 @@ DecodeResults TScanner::zbar_decode(Mat &img) {
     // Configure scanner
     //scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
     scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 0);
+    scanner.set_config(ZBAR_QRCODE, ZBAR_CFG_POSITION, 0);
+    scanner.set_config(ZBAR_QRCODE, ZBAR_CFG_X_DENSITY, 5);
+    scanner.set_config(ZBAR_QRCODE, ZBAR_CFG_Y_DENSITY, 5);
     scanner.set_config(ZBAR_QRCODE, ZBAR_CFG_ENABLE, 1);
 
 
@@ -187,6 +190,7 @@ DecodeResults TScanner::decode() {
     std::cout << timeInterval.count() << "ms" << std::endl;
 
 
+    /*
     //mean-filter
     begin_time = std::chrono::high_resolution_clock::now();
     Mat filter_img;
@@ -229,6 +233,7 @@ DecodeResults TScanner::decode() {
     end_time = std::chrono::high_resolution_clock::now();
     timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
     std::cout << timeInterval.count() << "ms" << std::endl;
+     */
 
     if(decodeObject.size() > 0){
         std::set<DecodeResult> s(decodeObject.begin(), decodeObject.end());
