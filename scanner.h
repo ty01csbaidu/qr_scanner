@@ -13,6 +13,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <zbar.h>
+#include <chrono>
 
 
 

@@ -17,7 +17,7 @@ TScanner::TScanner(const char * f) {
 }
 
 TScanner::TScanner(unsigned char * img, int width, int height) {
-    Mat tmp(width, height, CV_8UC1, img);
+    Mat tmp(height, width, CV_8UC1, img);
     origin_image = tmp;
 }
 
@@ -33,7 +33,9 @@ DecodeResults TScanner::zbar_decode(Mat &img) {
     ImageScanner scanner;
 
     // Configure scanner
-    scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+    //scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+    scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 0);
+    scanner.set_config(ZBAR_QRCODE, ZBAR_CFG_ENABLE, 1);
 
 
     // Wrap image data in a zbar image
@@ -144,14 +146,20 @@ DecodeResults TScanner::decode() {
     //cvtColor(origin_image, gray, CV_BGR2GRAY);
 
     //decode
+    std::chrono::high_resolution_clock::time_point begin_time = std::chrono::high_resolution_clock::now();
     DecodeResults decodeObject = morphology_decode(origin_image);
     if(decodeObject.size() > 0){
         std::cout << "direct" << std::endl;
         std::cout << decodeObject.size() << std::endl;
         //return decodeObject;
     }
+    std::chrono::high_resolution_clock::time_point end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
+    std::cout << timeInterval.count() << "ms" << std::endl;
+
 
     //otsu
+    begin_time = std::chrono::high_resolution_clock::now();
     Mat origin_otsu_im;
     threshold(origin_image, origin_otsu_im, 26, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
     DecodeResults intermediateResults = morphology_decode(origin_otsu_im);
@@ -160,8 +168,12 @@ DecodeResults TScanner::decode() {
         std::cout << intermediateResults.size() << std::endl;
         decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
+    std::cout << timeInterval.count() << "ms" << std::endl;
 
     //adaptive
+    begin_time = std::chrono::high_resolution_clock::now();
     Mat origin_adaptive_im;
     adaptiveThreshold(origin_image, origin_adaptive_im, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 41, 0);
     intermediateResults = morphology_decode(origin_adaptive_im);
@@ -170,9 +182,13 @@ DecodeResults TScanner::decode() {
         std::cout << intermediateResults.size() << std::endl;
         decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
+    std::cout << timeInterval.count() << "ms" << std::endl;
 
 
     //mean-filter
+    begin_time = std::chrono::high_resolution_clock::now();
     Mat filter_img;
     blur(origin_image, filter_img, Size(5,5));
 
@@ -182,8 +198,12 @@ DecodeResults TScanner::decode() {
         std::cout << intermediateResults.size() << std::endl;
         decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
+    std::cout << timeInterval.count() << "ms" << std::endl;
 
     //mean-filter + otsu
+    begin_time = std::chrono::high_resolution_clock::now();
     Mat otsu_im;
     threshold(filter_img, otsu_im, 26, 255, CV_THRESH_OTSU+CV_THRESH_BINARY);
     intermediateResults = morphology_decode(otsu_im);
@@ -192,8 +212,12 @@ DecodeResults TScanner::decode() {
         std::cout << intermediateResults.size() << std::endl;
         decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
+    std::cout << timeInterval.count() << "ms" << std::endl;
 
     //mean-filter + adaptive-filter
+    begin_time = std::chrono::high_resolution_clock::now();
     Mat adaptive_im;
     adaptiveThreshold(filter_img, adaptive_im, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 41, 0);
     intermediateResults = morphology_decode(adaptive_im);
@@ -202,6 +226,10 @@ DecodeResults TScanner::decode() {
         std::cout << intermediateResults.size() << std::endl;
         decodeObject.insert(decodeObject.end(), intermediateResults.begin(), intermediateResults.end());
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    timeInterval = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time);
+    std::cout << timeInterval.count() << "ms" << std::endl;
+
     if(decodeObject.size() > 0){
         std::set<DecodeResult> s(decodeObject.begin(), decodeObject.end());
         decodeObject.assign(s.begin(), s.end());
